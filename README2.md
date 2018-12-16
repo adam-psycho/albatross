@@ -1,10 +1,18 @@
 
 # Installation
 
+If using virtual env:
+
 		# In project directory
 		virtualenv -p python3 env
 		. env/bin/activate
 		pip install -r requirements.txt
+
+
+If not using using virtualenv :
+
+		# In project directory
+		sudo pip install -r requirements.txt
 
 # Classes
 
