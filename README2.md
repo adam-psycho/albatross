@@ -162,7 +162,7 @@ Using `print(topic)` prints a formated string with the ID, title, tags, page cou
 
 ## TopicList:
 
-```etiConn.topics(allowedTags=["LUE"], forbiddenTags=["Anonymous"]).search()```
+```topics = etiConn.topics(allowedTags=["LUE"], forbiddenTags=["Anonymous"]).search()```
 
 Note: Probably have to understand ETI pagination to understand this class a bit.
 
@@ -176,12 +176,13 @@ The `ts` parameter is an epoch time, and if found will list the first 50 topics 
 ##### Functions:
 * `search` - Returns a list of topics (see [Topic](#Topic) class)
 	* in: 	`query` (str, default="") - Serach  query. By default will search all topics
-	* in: `maxTime` (datetime, default=None)  - Where to end the search
-	* in: `maxID` (int, default=None) - Which ID to stop at
-	* in: `activeSince` (datetime, default=None)
+	* in: `maxTime` (datetime, default=None)  - sets the `ts` parameter
+	* in: `maxID` (int, default=None) - sets the `t` parameter
+	* in: `activeSince` (datetime, default=None) - `Gets all topics made after the set date`
 	* in: `topics` (list,default=[]) - List of Topics, which to append the new topics too
-	* in: `recurse` (bool, default=False) - If False, returns 50 topics (1 page worth), otherwise will return all topics under that tag, until `maxTime` or `maxID` is hit.
-
+	* in: `recurse` (bool, default=False) - If False, returns 50 topics (1 page worth), otherwise will return all topics under that tag, until `activeSince`.
+	* e.g. etiConn.topics(allowedTags=["LUE"], forbiddenTags=["Anonymous"]).search()
+		* This
 
 ## User:
 
