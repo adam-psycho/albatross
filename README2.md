@@ -48,6 +48,8 @@
 ## Image:
 Image information retrieval and manipulation.
 
+```etiConn.image('34f635c1ea464c463c8c8f5c8578f658', 'bit.jpg')```
+
 ##### Properties:
 * `relatedCount` - Returns a count of images that are related to this image.
 * `topicCount` - Returns a count of topics containing this image.
@@ -102,6 +104,8 @@ Tag list information retrieval and manipulation.
 
 ## Topic:
 
+```topic = etiConn.topic(12345)```
+
 Using `print(topic)` prints a formated string with the ID, title, tags, page count, posts count  and date.
 ##### Properties:
 * `id` - Topic id
@@ -139,6 +143,9 @@ Using `print(topic)` prints a formated string with the ID, title, tags, page cou
 
 
 ## TopicList:
+
+```etiConn.topics(allowedTags=["LUE"], forbiddenTags=["Anonymous"]).search()```
+
 Note: Probably have to understand ETI pagination to understand this class a bit.
 
 		http://boards.endoftheinter.net/topics/LUE?ts=1544943527&t=9788211
@@ -146,10 +153,10 @@ Note: Probably have to understand ETI pagination to understand this class a bit.
 The `ts` parameter is an epoch time, and if found will list the first 50 topics of that tag after that time. The `t` optional parameter is the last topic ID from the previous page. 
 
 ##### Properties:
-* `topics` - List of Topics (see [Topic](#Topic) class)
+* `topics` - List of Topics (see [Topic](#Topic) class). Pretty much only search should be used on this class though.
 
 ##### Functions:
-* `search` - Returns a list of topics
+* `search` - Returns a list of topics (see [Topic](#Topic) class)
 	* in: 	`query` (str, default="") - Serach  query. By default will search all topics
 	* in: `maxTime` (datetime, default=None)  - Where to end the search
 	* in: `maxID` (int, default=None) - Which ID to stop at
@@ -159,6 +166,8 @@ The `ts` parameter is an epoch time, and if found will list the first 50 topics 
 
 
 ## User:
+
+```user = etiConn.user(9017)```
 
 ##### Properties:
 * `name`
@@ -182,11 +191,14 @@ The `ts` parameter is an epoch time, and if found will list the first 50 topics 
 * `send_pm` - Sends a PM to the user
 	* in: `subject` (str)
 	* in: `message` (str)
+	* e.g.: `user.send_pm('Title', 'This is a PM')`
 
 ## UserList
 
+```literally_all_users = etiConn.users().search(recurse=True)```
+
 ##### Properties:
-* `users` - List of User objects (see [User](#User) class)
+* `users` - List of User objects (see [User](#User) class). Pretty much just search should be used on this class though.
 
 ##### Functions:
 * `search`- Searches for users using given parameters, and returns the current user listing object. Performs operation in parallel. Returns list of Users
