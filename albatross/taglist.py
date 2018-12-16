@@ -13,6 +13,7 @@ import urllib
 
 import albatross
 from . import base
+from . import page
 
 class TagListError(albatross.Error):
   pass
@@ -30,7 +31,7 @@ class TagList(base.Base):
     if active:
       parser = HTMLParser()
       mainPage = page.Page(self.connection, "https://endoftheinter.net/main.php")
-      tagLinksHTML = albatross.getEnclosedString(mainPage.html, r'<div style="font-size: 14px">', r'</div>', multiLine=True)
+      tagLinksHTML = albatross.getEnclosedString(mainPage.html, r'<div id="active-tags" style="font-size: 14px">', r'</div>', multiLine=True)
       tagLinks = tagLinksHTML.split('&nbsp;&bull; ')
       for text in tagLinks:
         self._tagNames[parser.unescape(albatross.getEnclosedString(text, '">', '</a>')).strip()] = 1

@@ -17,6 +17,7 @@ import urllib
 
 import albatross
 from . import base
+from . import page
 
 class InvalidImageError(albatross.Error):
   def __init__(self, image):
@@ -42,7 +43,7 @@ def parse_imagemap(html):
   imageDivs = imageGrid.find_all('div', {'class': 'grid_block'})
   for idx,imageDiv in enumerate(imageDivs):
     imageLink = imageDiv.find('a')
-    imageUrl = urllib.urlparse(imageLink.get('href'))
+    imageUrl = urllib.parse.urlparse(imageLink.get('href'))
     imageUrlParts = imageUrl.path.split('/')
     images.append({'md5': imageUrlParts[-2], 'filename': imageUrlParts[-1]})
   return images
@@ -104,7 +105,7 @@ class Image(base.Base):
       # no image on this page!
       raise InvalidImageError(self)
     # fetch the attributes from the image tag.
-    imageUrl = urllib.urlparse(image.get('src'))
+    imageUrl = urllib.parse.urlparse(image.get('src'))
     pathParts = imageUrl.path.split('/')
     attrs['filename'] = pathParts[-1]
     attrs['md5'] = pathParts[-2]
@@ -154,7 +155,7 @@ class Image(base.Base):
     topicRows = topicsTable.find_all('tr')[1:]
     for idx,topicRow in enumerate(topicRows):
       topicLink = topicRow.find('a')
-      topicUrl = urllib.urlparse(topicLink.get('href'))
+      topicUrl = urllib.parse.urlparse(topicLink.get('href'))
       topicAttrs = {'title': topicLink.text, 'imagemap_order': (params['page'], idx)}
       topicAttrs['archived'] = bool(topicUrl.netloc.split('.')[0] == "archives")
       # urlparse.parse_qs doesn't work here because ???
