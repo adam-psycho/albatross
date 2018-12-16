@@ -1,8 +1,17 @@
+
+# Installation
+
+		# In project directory
+		virtualenv -p python3 env
+		. env/bin/activate
+		pip install -r requirements.txt
+
 # Classes
 
 ## Connection:
 
- `etiConn = albatross.Connection(username="LlamaGuy", password="hunter2")`
+		import albatross
+ 		etiConn = albatross.Connection(username="LlamaGuy", password="hunter2")`
 
 ##### Properties:
 * `etiUp` - checks if ETI is up
@@ -209,3 +218,4 @@ The `ts` parameter is an epoch time, and if found will list the first 50 topics 
 	* in: `startPageNum`(int, default=None)
 	* in: `endPageNum` (int, default=None)
 	* in: `recurse` (bool, default=False)
+3
