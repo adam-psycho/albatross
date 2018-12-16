@@ -53,6 +53,7 @@ class Post(base.Base):
     self._user = None
     self._html = None
     self._sig = None
+    self._replies = None
 
     self.set(kwargs)
 
@@ -97,8 +98,12 @@ class Post(base.Base):
       'user': user,
       'date': pytz.timezone('America/Chicago').localize(datetime.datetime.strptime(timeString, "%m/%d/%Y %I:%M:%S %p")),
       'html': albatross.getEnclosedString(text, r' class="message">', '(\n)?---<br />(\n)?', multiLine=True, greedy=True),
-      'sig': albatross.getEnclosedString(text, '(\n)?---<br />(\n)?', r'</td>', multiLine=True, greedy=False)
+      'sig': albatross.getEnclosedString(text, '(\n)?---<br />(\n)?', r'</td>', multiLine=True, greedy=False),
+      'replies': 0
     }
+    replies = albatross.getEnclosedString(text, r'amp;thread={}">Replies \('.format(attrs['id']), r'\)</a>', greedy=False)
+    if replies is not False:
+      attrs['replies'] = int(replies)
     if attrs['html'] is False:
       # sigless and on message detail page.
       attrs['html'] = albatross.getEnclosedString(text, r' class="message">', r'</td>', multiLine=True, greedy=False)
@@ -147,3 +152,8 @@ class Post(base.Base):
   @base.loadable
   def sig(self):
     return self._sig
+
+  @property
+  @base.loadable
+  def replies(self):
+    return self._replies
