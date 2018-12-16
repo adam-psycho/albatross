@@ -15,10 +15,9 @@ import datetime
 import pytz
 
 import albatross
-import page
-import post
+from .pmthread import InvalidPMThreadError
+from . import post
 
-from pmthread import InvalidPMThreadError
 class UnloadedPMError(InvalidPMThreadError):
   def __init__(self, pm):
     super(UnloadedPMError, self).__init__(pm.thread)
@@ -26,7 +25,7 @@ class UnloadedPMError(InvalidPMThreadError):
   def __str__(self):
     return "\n".join([
       super(UnloadedPMError, self).__str__(),
-      "ID: " + unicode(self.pm.id),
+      "ID: " + str(self.pm.id),
     ])
 
 class InvalidPMSubjectError(albatross.Error):
@@ -57,7 +56,7 @@ class CouldNotSendPMError(albatross.Error):
   def __str__(self):
     return "\n".join([
       super(CouldNotSendPMError, self).__str__(),
-      "ID: " + unicode(self.user.id),
+      "ID: " + str(self.user.id),
       "HTML: " + self.html
     ])
 
@@ -79,13 +78,13 @@ def parse_pm(conn, html):
   separators = [i for i, j in enumerate(pmContents) if j == u'\n---']
   if separators:
     lastSeparator = separators[-1]
-    pm_html = ''.join(unicode(x) for x in pmContents[:lastSeparator])
+    pm_html = ''.join(str(x) for x in pmContents[:lastSeparator])
     if lastSeparator+2 > len(pmContents):
-      pm_sig = ''.join(unicode(x) for x in pmContents[lastSeparator+1:])
+      pm_sig = ''.join(str(x) for x in pmContents[lastSeparator+1:])
     else:
-      pm_sig = ''.join(unicode(x) for x in pmContents[lastSeparator+2:])
+      pm_sig = ''.join(str(x) for x in pmContents[lastSeparator+2:])
   else:
-    pm_html = ''.join(unicode(x) for x in pmContents)
+    pm_html = ''.join(str(x) for x in pmContents)
     pm_sig = ''
     lastSeparator = len(separators)
   return {

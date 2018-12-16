@@ -11,17 +11,14 @@
 
 import bs4
 import datetime
-import HTMLParser
+from html.parser import HTMLParser
 import pytz
 import re
 import urllib
-import urllib2
 
 import albatross
-import connection
-import page
-import base
-from image import parse_imagemap
+from . import base
+from . import page
 
 class InvalidTopicError(albatross.Error):
   def __init__(self, topic):
@@ -30,15 +27,15 @@ class InvalidTopicError(albatross.Error):
   def __str__(self):
     return "\n".join([
         super(InvalidTopicError, self).__str__(),
-      "TopicID: " + unicode(self.topic.id),
-      "Page: " + unicode(self.topic.page)
+      "TopicID: " + str(self.topic.id),
+      "Page: " + str(self.topic.page)
       ])
 
 class ArchivedTopicError(InvalidTopicError):
   def __str__(self):
     return "\n".join([
         super(ArchivedTopicError, self).__str__(),
-      "Archived: " + unicode(self.topic._archived)
+      "Archived: " + str(self.topic._archived)
       ])
 
 class TopicPermissionError(InvalidTopicError):
@@ -75,11 +72,11 @@ class Topic(base.Base):
     if self._date is None:
       self.load()
     return "\n".join([
-      "ID: " + unicode(self.id) + " (Archived: " + unicode(self.archived) + ")",
-      "Title: " + unicode(self.title),
+      "ID: " + str(self.id) + " (Archived: " + str(self.archived) + ")",
+      "Title: " + str(self.title),
       "Tags: " + ", ".join(self.tags._tagNames),
-      "Page: " + unicode(self.page) + "/" + unicode(self.pages),
-      "Posts:" + unicode(self.postCount),
+      "Page: " + str(self.page) + "/" + str(self.pages),
+      "Posts:" + str(self.postCount),
       "Date: " + self.date.strftime("%m/%d/%Y %I:%M:%S %p")
       ])
 
@@ -124,7 +121,7 @@ class Topic(base.Base):
     """
 
     attrs = {}
-    parser = HTMLParser.HTMLParser()
+    parser = HTMLParser()
 
     soup = bs4.BeautifulSoup(html)
 
@@ -135,11 +132,11 @@ class Topic(base.Base):
     attrs['title'] = parser.unescape(albatross.getEnclosedString(html, r'\<h1\>', r'\<\/h1\>'))
     attrs['date'] = pytz.timezone('America/Chicago').localize(datetime.datetime.strptime(albatross.getEnclosedString(html, r'<b>Posted:</b> ', r' \| '), "%m/%d/%Y %I:%M:%S %p"))
     userID = int(albatross.getEnclosedString(html, r'<div class="message-top"><b>From:</b> <a href="//endoftheinter\.net/profile\.php\?user=', r'">'))
-    username = parser.unescape(True and albatross.getEnclosedString(html, r'<div class="message-top"><b>From:</b> <a href="//endoftheinter\.net/profile\.php\?user=' + unicode(userID) + r'">', r'</a>') or 'Human')
+    username = parser.unescape(True and albatross.getEnclosedString(html, r'<div class="message-top"><b>From:</b> <a href="//endoftheinter\.net/profile\.php\?user=' + str(userID) + r'">', r'</a>') or 'Human')
     attrs['user'] = self.connection.user(userID).set({'name': username})
     attrs['pages'] = int(albatross.getEnclosedString(html, r'">(First Page</a> \| )?(<a href)?(\S+)?(Previous Page</a> \| )?Page \d+ of <span>', r'</span>'))
     attrs['closed'] = attrs['archived']
-    tagNames = [urllib2.unquote(albatross.getEnclosedString(tagEntry, '<a href="/topics/', r'">')) for tagEntry in albatross.getEnclosedString(html, r"<h2><div", r"</div></h2>").split(r"</a>")[:-1] if not tagEntry.startswith(' <span')]
+    tagNames = [urllib.parse.unquote(albatross.getEnclosedString(tagEntry, '<a href="/topics/', r'">')) for tagEntry in albatross.getEnclosedString(html, r"<h2><div", r"</div></h2>").split(r"</a>")[:-1] if not tagEntry.startswith(' <span')]
     # we need to process tag names
     # e.g. remove enclosing square braces and decode html entities.
     cleanedTagNames = []
@@ -148,7 +145,7 @@ class Topic(base.Base):
         tagName = tagName[1:-1]
       cleanedTagNames.append(parser.unescape(tagName.replace("_", " ")))
     attrs['tags'] = self.connection.tags(tags=cleanedTagNames)
-    lastPage = self.connection.page('https://' + subdomain + '.endoftheinter.net/showmessages.php?topic=' + unicode(self.id) + '&page=' + unicode(attrs['pages']))
+    lastPage = self.connection.page('https://' + subdomain + '.endoftheinter.net/showmessages.php?topic=' + str(self.id) + '&page=' + str(attrs['pages']))
     if lastPage.authed:
       lastPagePosts = self.getPagePosts(lastPage.html)
       lastPost = self.connection.post(1, self)
@@ -167,7 +164,7 @@ class Topic(base.Base):
       subdomain="archives"
     else:
       subdomain="boards"
-    topicPage = self.connection.page('https://' + subdomain + '.endoftheinter.net/showmessages.php?topic=' + unicode(self.id))
+    topicPage = self.connection.page('https://' + subdomain + '.endoftheinter.net/showmessages.php?topic=' + str(self.id))
 
     if re.search(r'<h1>Error</h1><em>You are not authorized to view messages on this board\.</em>', topicPage.html):
       raise TopicPermissionError(self)
@@ -178,7 +175,7 @@ class Topic(base.Base):
       if self._archived is None:
         self._archived = True
         subdomain = "archives"
-        topicPage = self.connection.page('https://' + subdomain + '.endoftheinter.net/showmessages.php?topic=' + unicode(self.id))
+        topicPage = self.connection.page('https://' + subdomain + '.endoftheinter.net/showmessages.php?topic=' + str(self.id))
       elif self._archived is False:
         raise ArchivedTopicError(self)
     elif self._archived is None:
@@ -241,6 +238,10 @@ class Topic(base.Base):
     """
     Takes the HTML of one page of a topic or link and returns a list containing the HTML for one post in each element on said page.
     """
+    try:
+      text = text.decode('utf-8')
+    except:
+      pass
     return text.split('<td class="userpic">')[:-1]
 
   def appendPosts(self, text, url, curlHandle, paramArray):
@@ -290,7 +291,7 @@ class Topic(base.Base):
     self._posts = []
     # now loop over all the other pages (if there are any)
     for pageNum in range(self.page, int(endPageNum)+1):
-      topicPageParams = urllib.urlencode([('topic', str(self.id)), ('u', str(userID)), ('page', str(pageNum))])
+      topicPageParams = urllib.parse.urlencode([('topic', str(self.id)), ('u', str(userID)), ('page', str(pageNum))])
       self.connection.parallelCurl.startrequest('https://' + topicSubdomain + '.endoftheinter.net/showmessages.php?' + topicPageParams, self.appendPosts)
     self.connection.parallelCurl.finishallrequests()
 
@@ -342,7 +343,7 @@ class Topic(base.Base):
         'topic': self.id,
         'page': 1
       }
-      firstPageUrl = 'https://images.endoftheinter.net/imagemap.php?' + urllib.urlencode(firstPageParams)
+      firstPageUrl = 'https://images.endoftheinter.net/imagemap.php?' + urllib.parse.urlencode(firstPageParams)
       firstPage = self.connection.page(firstPageUrl)
       firstPageSoup = bs4.BeautifulSoup(firstPage.html)
       infobar = firstPageSoup.find('div', {'class': 'infobar'})
@@ -359,7 +360,7 @@ class Topic(base.Base):
 
     # now fetch all the pages.
     for page in range(startPage, int(numPages)+1):
-      imageMapParams = urllib.urlencode({'topic': self.id, 'page': page})
+      imageMapParams = urllib.parse.urlencode({'topic': self.id, 'page': page})
       self.connection.parallelCurl.startrequest('https://images.endoftheinter.net/imagemap.php?' + imageMapParams, self.appendImages, {'page': page})
     self.connection.parallelCurl.finishallrequests()
     self._images = sorted(self._images, key=lambda x: x._imagemap_order)
@@ -373,7 +374,7 @@ class Topic(base.Base):
     # get post-key.
     if self.connection.topicCSRFKey is None:
       self.load()
-    if isinstance(html, unicode):
+    if isinstance(html, str):
       html = html.encode('utf-8')
     post_fields = {
       'topic': self.id,

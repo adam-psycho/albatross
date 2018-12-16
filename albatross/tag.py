@@ -10,14 +10,12 @@
 '''
 
 import json
-import HTMLParser
+from html.parser import HTMLParser
 import sys
 import urllib
 
 import albatross
-import connection
-import page
-import base
+from . import base
 
 class InvalidTagError(albatross.Error):
   def __init__(self, tag):
@@ -26,7 +24,7 @@ class InvalidTagError(albatross.Error):
   def __str__(self):
     return "\n".join([
         super(InvalidTagError, self).__str__(),
-        "Name: " + unicode(self.tag.name)
+        "Name: " + str(self.tag.name)
       ])
 
 class MalformedTagError(InvalidTagError):
@@ -36,7 +34,7 @@ class MalformedTagError(InvalidTagError):
   def __str__(self):
     return "\n".join([
         super(MalformedTagError, self).__str__(),
-        "Text: " + unicode(self.text)
+        "Text: " + str(self.text)
       ])
 
 class Tag(base.Base):
@@ -45,7 +43,7 @@ class Tag(base.Base):
   '''
   def __init__(self, conn, name):
     super(Tag, self).__init__(conn)
-    self.name = unicode(name)
+    self.name = str(name)
     self._staff = None
     self._description = None
     self._related = None
@@ -54,9 +52,9 @@ class Tag(base.Base):
 
   def __str__(self):
     return "\n".join([
-      "Tag: " + unicode(self.name),
+      "Tag: " + str(self.name),
       "-"*(len(self.name) + 5),
-      unicode(self.description),
+      str(self.description),
       "Staff:",
       "------",
       "\n".join([staff['name'] + ": " + staff['role'] for staff in self.staff]),
@@ -92,9 +90,9 @@ class Tag(base.Base):
     try:
       tagJSON = json.loads(text)
     except ValueError:
-      raise MalformedTagError(self, unicode(text))
+      raise MalformedTagError(self, str(text))
     if len(tagJSON) < 1:
-      raise MalformedTagError(self, unicode(tagJSON))
+      raise MalformedTagError(self, str(tagJSON))
 
     # match only the tag in this JSON that has this tag's name, if it's set.
     if self.name:
@@ -129,7 +127,7 @@ class Tag(base.Base):
         user = self.connection.user(int(albatross.getEnclosedString(administrator, r"\?user=", r'">'))).set({'name': albatross.getEnclosedString(administrator, r'">', r"</a>")})
         tag['staff'].append({'user': user, 'role':'administrator'})
 
-    parser = HTMLParser.HTMLParser()
+    parser = HTMLParser()
     descriptionText = albatross.getEnclosedString(tagJSON[1][0], r":</b> ", descriptionEndTag)
     if descriptionText:
       tag['description'] = parser.unescape(descriptionText)
@@ -151,7 +149,7 @@ class Tag(base.Base):
     """
     Fetches tag info.
     """
-    tagInfoParams = urllib.urlencode([('e', ''), ('q', unicode(self.name).encode('utf-8'))])
+    tagInfoParams = urllib.parse.urlencode([('e', ''), ('q', str(self.name).encode('utf-8'))])
     tagURL = "https://boards.endoftheinter.net/async-tag-query.php?" + tagInfoParams
     tagPage = self.connection.page(tagURL)
     # check to see if this page is valid.
@@ -159,8 +157,8 @@ class Tag(base.Base):
       # hooray, start pulling info.
       try:
         self.set(self.parse(tagPage.html))
-      except MalformedTagError, e:
-        e.message = "URL: " + unicode(tagURL)
+      except MalformedTagError as e:
+        e.message = "URL: " + str(tagURL)
         raise e
     else:
       raise connection.UnauthorizedError(self.connection)

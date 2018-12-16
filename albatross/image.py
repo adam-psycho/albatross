@@ -10,18 +10,13 @@
 '''
 
 import bs4
-import HTMLParser
+from html.parser import HTMLParser
 import pytz
 import re
 import urllib
-import urlparse
-import urllib2
 
 import albatross
-import connection
-import page
-import base
-import topic
+from . import base
 
 class InvalidImageError(albatross.Error):
   def __init__(self, image):
@@ -30,8 +25,8 @@ class InvalidImageError(albatross.Error):
   def __str__(self):
     return "\n".join([
         super(InvalidImageError, self).__str__(),
-      "MD5: " + unicode(self.image.md5),
-      "Filename: " + unicode(self.image.filename)
+      "MD5: " + str(self.image.md5),
+      "Filename: " + str(self.image.filename)
       ])
 
 def parse_imagemap(html):
@@ -47,7 +42,7 @@ def parse_imagemap(html):
   imageDivs = imageGrid.find_all('div', {'class': 'grid_block'})
   for idx,imageDiv in enumerate(imageDivs):
     imageLink = imageDiv.find('a')
-    imageUrl = urlparse.urlparse(imageLink.get('href'))
+    imageUrl = urllib.urlparse(imageLink.get('href'))
     imageUrlParts = imageUrl.path.split('/')
     images.append({'md5': imageUrlParts[-2], 'filename': imageUrlParts[-1]})
   return images
@@ -58,9 +53,9 @@ class Image(base.Base):
   '''
   def __init__(self, conn, md5, filename):
     super(Image, self).__init__(conn)
-    self.md5 = unicode(md5)
-    self.filename = unicode(filename)
-    if not isinstance(self.md5, unicode) or not isinstance(self.filename, unicode):
+    self.md5 = str(md5)
+    self.filename = str(filename)
+    if not isinstance(self.md5, str) or not isinstance(self.filename, str):
       raise InvalidImageError(self)
     self._related = self._relatedCount = self._topics = self._topicCount = None
 
@@ -68,10 +63,10 @@ class Image(base.Base):
     if self._related is None:
       self.load()
     return "\n".join([
-      "MD5: " + unicode(self.md5),
-      "Filename: " + unicode(self.filename),
-      "related: " + unicode(self.relatedCount),
-      "Topics: " + unicode(self.topicCount),
+      "MD5: " + str(self.md5),
+      "Filename: " + str(self.filename),
+      "related: " + str(self.relatedCount),
+      "Topics: " + str(self.topicCount),
       ])
 
   def __index__(self):
@@ -109,7 +104,7 @@ class Image(base.Base):
       # no image on this page!
       raise InvalidImageError(self)
     # fetch the attributes from the image tag.
-    imageUrl = urlparse.urlparse(image.get('src'))
+    imageUrl = urllib.urlparse(image.get('src'))
     pathParts = imageUrl.path.split('/')
     attrs['filename'] = pathParts[-1]
     attrs['md5'] = pathParts[-2]
@@ -159,7 +154,7 @@ class Image(base.Base):
     topicRows = topicsTable.find_all('tr')[1:]
     for idx,topicRow in enumerate(topicRows):
       topicLink = topicRow.find('a')
-      topicUrl = urlparse.urlparse(topicLink.get('href'))
+      topicUrl = urllib.urlparse(topicLink.get('href'))
       topicAttrs = {'title': topicLink.text, 'imagemap_order': (params['page'], idx)}
       topicAttrs['archived'] = bool(topicUrl.netloc.split('.')[0] == "archives")
       # urlparse.parse_qs doesn't work here because ???
@@ -179,7 +174,7 @@ class Image(base.Base):
         'md5': self.md5,
         'page': 1
       }
-      firstPageUrl = 'https://images.endoftheinter.net/imagemap.php?' + urllib.urlencode(firstPageParams)
+      firstPageUrl = 'https://images.endoftheinter.net/imagemap.php?' + urllib.parse.urlencode(firstPageParams)
       firstPage = self.connection.page(firstPageUrl)
       firstPageSoup = bs4.BeautifulSoup(firstPage.html)
       infobar = firstPageSoup.find('div', {'class': 'infobar'})
@@ -196,7 +191,7 @@ class Image(base.Base):
 
     # now fetch all the pages.
     for page in range(startPage, int(numPages)+1):
-      topicPageParams = urllib.urlencode({'md5': self.md5, 'page': page})
+      topicPageParams = urllib.parse.urlencode({'md5': self.md5, 'page': page})
       self.connection.parallelCurl.startrequest('https://images.endoftheinter.net/imagemap.php?' + topicPageParams, self.appendTopics, {'page': page})
     self.connection.parallelCurl.finishallrequests()
     self._topics = sorted(self._topics, key=lambda x: x._imagemap_order)
@@ -245,7 +240,7 @@ class Image(base.Base):
         'related': self.md5,
         'page': 1
       }
-      firstPageUrl = 'https://images.endoftheinter.net/imagemap.php?' + urllib.urlencode(firstPageParams)
+      firstPageUrl = 'https://images.endoftheinter.net/imagemap.php?' + urllib.parse.urlencode(firstPageParams)
       firstPage = self.connection.page(firstPageUrl)
       firstPageSoup = bs4.BeautifulSoup(firstPage.html)
       infobar = firstPageSoup.find('div', {'class': 'infobar'})
@@ -262,7 +257,7 @@ class Image(base.Base):
 
     # now fetch all the pages.
     for page in range(startPage, int(numPages)+1):
-      relatedPageParams = urllib.urlencode({'related': self.md5, 'page': page})
+      relatedPageParams = urllib.parse.urlencode({'related': self.md5, 'page': page})
       self.connection.parallelCurl.startrequest('https://images.endoftheinter.net/imagemap.php?' + relatedPageParams, self.appendRelatedImages, {'page': page})
     self.connection.parallelCurl.finishallrequests()
     self._related = sorted(self._related, key=lambda x: x._imagemap_order)

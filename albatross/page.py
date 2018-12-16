@@ -9,12 +9,12 @@
     Page - lazy-loads pages and headers.
 '''
 
-import cStringIO
+import io
 import pycurl
 import urllib
 
 import albatross
-import connection
+from . import base
 
 class PageLoadError(albatross.Error):
   def __init__(self, page):
@@ -23,8 +23,8 @@ class PageLoadError(albatross.Error):
   def __str__(self):
     return "\n".join([
         super(PageLoadError, self).__str__(),
-        "URL: " + unicode(self.page.url),
-        "needsAuth: " + unicode(self.page.needsAuth)
+        "URL: " + str(self.page.url),
+        "needsAuth: " + str(self.page.needsAuth)
       ])
 
 class Page(object):
@@ -44,6 +44,10 @@ class Page(object):
     Checks to ensure that the cookieString we used to make our request is still valid.
     If it's not, then there will be an error message in the HTML returned by the request.
     """
+    try:
+      text = text.decode('utf-8')
+    except:
+      pass
     if not text or "Sie haben das Ende des Internets erreicht." in text:
       return False
     return True
@@ -54,7 +58,7 @@ class Page(object):
     """
     for x in range(retries): # Limit the number of retries.
       self.connection.numRequests += 1
-      header = cStringIO.StringIO()
+      header = io.BytesIO()
       pageRequest = pycurl.Curl()
       
       pageRequest.setopt(pycurl.NOBODY, True)
@@ -81,8 +85,8 @@ class Page(object):
     
     for x in range(retries): # Limit the number of retries.
       self.connection.numRequests += 1
-      response = cStringIO.StringIO()
-      header = cStringIO.StringIO()
+      response = io.BytesIO()
+      header = io.BytesIO()
       pageRequest = pycurl.Curl()
       
       pageRequest.setopt(pycurl.SSL_VERIFYPEER, False)
@@ -125,8 +129,8 @@ class Page(object):
     """
     for x in range(retries): # Limit the number of retries.
       self.connection.numRequests += 1
-      response = cStringIO.StringIO()
-      header = cStringIO.StringIO()
+      response = io.BytesIO()
+      header = io.BytesIO()
       pageRequest = pycurl.Curl()
       
       pageRequest.setopt(pycurl.SSL_VERIFYPEER, False)
@@ -134,7 +138,7 @@ class Page(object):
       pageRequest.setopt(pycurl.URL, self.url.encode('utf-8'))
       pageRequest.setopt(pycurl.USERAGENT, 'Albatross')
       pageRequest.setopt(pycurl.COOKIE, self.connection.cookieString.encode('utf-8') if self.connection.cookieString else "")
-      pageRequest.setopt(pycurl.POSTFIELDS, urllib.urlencode(fields))
+      pageRequest.setopt(pycurl.POSTFIELDS, urllib.parse.urlencode(fields))
       pageRequest.setopt(pycurl.WRITEFUNCTION, response.write)
       pageRequest.setopt(pycurl.HEADERFUNCTION, header.write)
       try:

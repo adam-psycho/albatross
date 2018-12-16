@@ -15,8 +15,7 @@ import datetime
 import pytz
 
 import albatross
-import page
-import base
+from . import base
 
 def parse_pm_listing(conn, html):
   """
@@ -59,7 +58,7 @@ class PMInbox(base.Base):
 
   def __str__(self):
     return "\n".join([
-      "User ID: " + unicode(self.conn.user_id)
+      "User ID: " + str(self.conn.user_id)
       ])
 
   def __len__(self):
@@ -106,7 +105,7 @@ class PMInbox(base.Base):
       firstPageParams = {
         'page': 1
       }
-      firstPageUrl = 'https://endoftheinter.net/inbox.php?' + urllib.urlencode(firstPageParams)
+      firstPageUrl = 'https://endoftheinter.net/inbox.php?' + urllib.parse.urlencode(firstPageParams)
       firstPage = self.connection.page(firstPageUrl)
       firstPageSoup = bs4.BeautifulSoup(firstPage.html)
 
@@ -121,7 +120,7 @@ class PMInbox(base.Base):
 
     # now fetch all the pages.
     for page in range(startPage, int(numPages)+1):
-      inboxParams = urllib.urlencode({'page': page})
+      inboxParams = urllib.parse.urlencode({'page': page})
       self.connection.parallelCurl.startrequest('https://endoftheinter.net/inbox.php?' + inboxParams, self.appendThreads, {'page': page})
     self.connection.parallelCurl.finishallrequests()
     self._threads = sorted(self._threads, key=lambda x: x._pm_thread_order)

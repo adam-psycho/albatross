@@ -9,14 +9,13 @@
     UserList - User list information retrieval and manipulation.
 '''
 import datetime
-import HTMLParser
+from html.parser import HTMLParser
 import pytz
 import re
 import urllib
 
 import albatross
-import page
-import base
+from . import base
 
 class UserListError(albatross.Error):
   def __init__(self, topicList):
@@ -66,7 +65,7 @@ class UserList(base.Base):
     if not thisUser:
       raise UserListError(self)
     centralTime =  pytz.timezone('America/Chicago')
-    parser = HTMLParser.HTMLParser()
+    parser = HTMLParser()
 
     userID = int(thisUser.group('userID')) if thisUser.group('userID') else None
     username = parser.unescape(thisUser.group('username')) if thisUser.group('username') else None
@@ -106,7 +105,7 @@ class UserList(base.Base):
       
     thisPageUsers = self.getPageUsers(text)
     for userRow in thisPageUsers:
-      print isinstance(userRow, str) or isinstance(userRow, unicode)
+      print(isinstance(userRow, str) or isinstance(userRow, str))
       newUser = self.connection.user(0).set(self.parse(userRow))
       if newUser.id <= maxID and newUser.lastActive >= activeSince and newUser.created >= createdSince and newUser not in self:
         self._userIDs[newUser] = 1
@@ -129,7 +128,7 @@ class UserList(base.Base):
 
     if endPageNum is None or not recurse:
       # fetch first page to grab number of pages, and grab users while we're at it.
-      userListParams = urllib.urlencode([('user', unicode(query)), ('page', str(startPageNum))])
+      userListParams = urllib.parse.urlencode([('user', str(query)), ('page', str(startPageNum))])
       firstUrl = 'https://endoftheinter.net/userlist.php?' + userListParams
       firstUserPage = self.connection.page(firstUrl)
       self.appendUsers(firstUserPage.html, firstUrl, None, paramArray)
@@ -146,7 +145,7 @@ class UserList(base.Base):
 
     # now loop over all the other pages (if there are any)
     for pageNum in range(startPageNum, endPageNum+1):
-      userListParams = urllib.urlencode([('user', unicode(query)), ('page', str(pageNum))])
+      userListParams = urllib.parse.urlencode([('user', str(query)), ('page', str(pageNum))])
       self.connection.parallelCurl.startrequest('https://endoftheinter.net/userlist.php?' + userListParams, self.appendUsers, paramArray)
     self.connection.parallelCurl.finishallrequests()
     self._users = sorted(self._users, key=lambda userObject: userObject.id)

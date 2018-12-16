@@ -8,26 +8,26 @@
 
     Connection - provides primary interface to ETI, and spawns topics / tags / links / users / etc.
 '''
-import cStringIO
+import io
 import os
 import pycurl
-import pyparallelcurl
 import re
 import urllib
 
 import albatross
-from page import Page
-from topic import Topic
-from topiclist import TopicList
-from tag import Tag
-from taglist import TagList
-from post import Post
-from image import Image
-from user import User
-from userlist import UserList
-from pminbox import PMInbox
-from pmthread import PMThread
-from pm import PM
+from . import base
+from .page import Page
+from .topic import Topic
+from .topiclist import TopicList
+from .tag import Tag
+from .taglist import TagList
+from .post import Post
+from .image import Image
+from .user import User
+from .userlist import UserList
+from .pminbox import PMInbox
+from .pmthread import PMThread
+from .pm import PM
 
 class UnauthorizedError(albatross.Error):
   def __init__(self, cxn):
@@ -71,7 +71,7 @@ class Connection(object):
     if reauth is not None:
       self.reauth = bool(reauth)
     if not self.cookieString or not self.loggedIn():
-      print "Warning: invalid credentials provided."
+      print("Warning: invalid credentials provided.")
       raise UnauthorizedError(self)
     self.setParallelCurlObject()
     
@@ -80,7 +80,7 @@ class Connection(object):
     Given a cookie response header returned by pyCurl, return a string of cookie key/values.
     """
     
-    string_array = unicode(string).split("\r\n")
+    string_array = str(string).split("\r\n")
     cookieList = []
     for line in string_array:
       if line.startswith("Set-Cookie:"):
@@ -93,7 +93,7 @@ class Connection(object):
     """
     Logs into LL using connection's username and password, returning the resultant cookie string.
     """
-    response = cStringIO.StringIO()
+    response = io.BytesIO()
     loginHeaders = pycurl.Curl()
     
     loginHeaders.setopt(pycurl.SSL_VERIFYPEER, False)
@@ -101,7 +101,7 @@ class Connection(object):
     loginHeaders.setopt(pycurl.POST, 1)
     loginHeaders.setopt(pycurl.HEADER, True)
     loginHeaders.setopt(pycurl.URL, self.loginSite["url"]+'index.php')
-    loginHeaders.setopt(pycurl.POSTFIELDS, urllib.urlencode(dict([(self.loginSite["fields"]["username"], unicode(self.username).encode('utf-8')), (self.loginSite["fields"]["password"], unicode(self.password).encode('utf-8')), ('r', '')])))
+    loginHeaders.setopt(pycurl.POSTFIELDS, urllib.parse.urlencode(dict([(self.loginSite["fields"]["username"], str(self.username).encode('utf-8')), (self.loginSite["fields"]["password"], str(self.password).encode('utf-8')), ('r', '')])))
     loginHeaders.setopt(pycurl.USERAGENT, 'Albatross')
     loginHeaders.setopt(pycurl.WRITEFUNCTION, response.write)
     
@@ -111,7 +111,7 @@ class Connection(object):
     except:
       return False
     
-    cookieHeader = response.getvalue()
+    cookieHeader = response.getvalue().decode('utf-8')
     if re.search(r'Sie bitte 15 Minuten', cookieHeader) or not re.search(r'session=', cookieHeader):
       return False
 
@@ -143,7 +143,7 @@ class Connection(object):
     try:
       self.parallelCurl.setoptions(self.parallelCurlOptions)
     except AttributeError:
-      self.parallelCurl = pyparallelcurl.ParallelCurl(self.concurrents, self.parallelCurlOptions)
+      self.parallelCurl = albatross.pyparallelcurl.ParallelCurl(self.concurrents, self.parallelCurlOptions)
     
   def reauthenticate(self):
     """
@@ -172,14 +172,14 @@ class Connection(object):
     Returns a boolean.
     """
     for x in range(retries): # Limit the number of retries.
-      header = cStringIO.StringIO()
+      header = io.BytesIO()
       pageRequest = pycurl.Curl()
       
       pageRequest.setopt(pycurl.SSL_VERIFYPEER, False)
       pageRequest.setopt(pycurl.SSL_VERIFYHOST, False)
       pageRequest.setopt(pycurl.URL, "https://endoftheinter.net/index.php")
       pageRequest.setopt(pycurl.USERAGENT, 'Albatross')
-      pageRequest.setopt(pycurl.COOKIE, unicode(self.cookieString).encode('utf-8'))
+      pageRequest.setopt(pycurl.COOKIE, str(self.cookieString).encode('utf-8'))
       pageRequest.setopt(pycurl.HEADERFUNCTION, header.write)
       try:
         pageRequest.perform()

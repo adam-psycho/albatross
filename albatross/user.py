@@ -10,16 +10,13 @@
 
 import bs4
 import datetime
-import HTMLParser
+from html.parser import HTMLParser
 import pytz
 import re
 import xml.sax.saxutils
 
 import albatross
-import connection
-import base
-from pmthread import InvalidCSRFKeyError
-from pm import InvalidPMSubjectError, InvalidPMMessageError, CouldNotSendPMError
+from . import base
 
 class InvalidUserError(albatross.Error):
   def __init__(self, user):
@@ -28,7 +25,7 @@ class InvalidUserError(albatross.Error):
   def __str__(self):
     return "\n".join([
       super(InvalidUserError, self).__str__(),
-      "ID: " + unicode(self.user.id)
+      "ID: " + str(self.user.id)
     ])
 
 class User(base.Base):
@@ -64,22 +61,22 @@ class User(base.Base):
     if self._created is None:
       self.load()
     return "\n".join([
-      "ID: " + unicode(self.id),
-      "Name: " + unicode(self.name) + " (" + unicode(self.level) + ")",
-      "Formerly: " + unicode(self.formerly),
-      "Banned: " + unicode(self.banned),
-      "Suspended: " + unicode(self.suspended),
-      "Reputation: " + unicode(self.reputation),
-      "Tokens:" + unicode(self.tokens),
-      "Good Tokens: " + unicode(self.goodTokens),
-      "Bad Tokens: " + unicode(self.badTokens),
+      "ID: " + str(self.id),
+      "Name: " + str(self.name) + " (" + str(self.level) + ")",
+      "Formerly: " + str(self.formerly),
+      "Banned: " + str(self.banned),
+      "Suspended: " + str(self.suspended),
+      "Reputation: " + str(self.reputation),
+      "Tokens:" + str(self.tokens),
+      "Good Tokens: " + str(self.goodTokens),
+      "Bad Tokens: " + str(self.badTokens),
       "Created: " + self.created.strftime("%m/%d/%Y"),
       "Last Active: " + self.lastActive.strftime("%m/%d/%Y"),
-      "Signature:" + unicode(self.sig),
-      "Quote: " + unicode(self.quote),
-      "Email: " + unicode(self.email),
-      "IM:" + unicode(self.im),
-      "Picture: " + unicode(self.picture)
+      "Signature:" + str(self.sig),
+      "Quote: " + str(self.quote),
+      "Email: " + str(self.email),
+      "IM:" + str(self.im),
+      "Picture: " + str(self.picture)
       ])
 
   def __index__(self):
@@ -108,7 +105,7 @@ class User(base.Base):
     Returns a dict of attributes.
     """
     attrs = {}
-    parser = HTMLParser.HTMLParser()
+    parser = HTMLParser()
     centralTime = pytz.timezone("America/Chicago")
 
     attrs['id'] = int(albatross.getEnclosedString(html, "<td>User ID</td>\s+<td>", r"</td>"))
@@ -158,7 +155,7 @@ class User(base.Base):
     """
     Fetches user info.
     """
-    userPage = self.connection.page('https://endoftheinter.net/profile.php?user=' + unicode(self.id))
+    userPage = self.connection.page('https://endoftheinter.net/profile.php?user=' + str(self.id))
 
     # check to see if this user is valid.
     # if username is not present, then status must be (indicates previously-extant user was banned or suspended)
@@ -264,15 +261,15 @@ class User(base.Base):
       raise InvalidPMMessageError(self, message)
     # get csrf key.
     if self._csrfKey is None:
-      pmPage = self.connection.page('https://endoftheinter.net/postmsg.php?puser=' + unicode(self.id))
+      pmPage = self.connection.page('https://endoftheinter.net/postmsg.php?puser=' + str(self.id))
       soup = bs4.BeautifulSoup(pmPage.html)
       csrfTag = soup.find("input", {"name": "h"})
       if not csrfTag:
         raise InvalidCSRFKeyError(self, soup, user=self)
       self.set({'csrfKey': csrfTag.get('value')})
-    if isinstance(subject, unicode):
+    if isinstance(subject, str):
       subject = subject.encode('utf-8')
-    if isinstance(message, unicode):
+    if isinstance(message, str):
       message = message.encode('utf-8')
     post_fields = {
       'puser': self.id,

@@ -16,8 +16,7 @@ import datetime
 import pytz
 
 import albatross
-import page
-import base
+from . import base
 
 class InvalidPMThreadError(albatross.Error):
   def __init__(self, thread):
@@ -26,7 +25,7 @@ class InvalidPMThreadError(albatross.Error):
   def __str__(self):
     return "\n".join([
         super(InvalidPMThreadError, self).__str__(),
-        "ID: " + unicode(self.thread.id)
+        "ID: " + str(self.thread.id)
       ])
 
 class InvalidCSRFKeyError(albatross.Error):
@@ -39,8 +38,8 @@ class InvalidCSRFKeyError(albatross.Error):
     return "\n".join([
       super(InvalidCSRFKeyError, self).__str__(),
       "HTML: " + self.html,
-      "Thread: " + unicode(self.thread),
-      "User: " + unicode(self.user)
+      "Thread: " + str(self.thread),
+      "User: " + str(self.user)
     ])
 
 class MalformedPMThreadError(albatross.Error):
@@ -51,11 +50,10 @@ class MalformedPMThreadError(albatross.Error):
   def __str__(self):
     return "\n".join([
         super(MalformedPMThreadError, self).__str__(),
-        "ID: " + unicode(self.thread.id),
+        "ID: " + str(self.thread.id),
         "HTML: " + self.html
       ])
 
-from pm import parse_pm
 def parse_pms(conn, html):
   """
   Given a connection and some html containing a PM thread's contents,
@@ -65,11 +63,10 @@ def parse_pms(conn, html):
   soup = bs4.BeautifulSoup(html)
   pmRows = soup.find_all('div', {'class': 'message-container'})
   for pmRow in pmRows:
-    pmInfo = parse_pm(conn, unicode(pmRow))
+    pmInfo = albatross.pm.parse_pm(conn, str(pmRow))
     pms.append(pmInfo)
   return pms
 
-from pm import InvalidPMMessageError
 class PMThread(base.Base):
   '''
   Private message thread-loading object for albatross.
@@ -90,10 +87,10 @@ class PMThread(base.Base):
 
   def __str__(self):
     return "\n".join([
-      "ID: " + unicode(self.id),
+      "ID: " + str(self.id),
       "Subject: " + self.subject,
-      "Page: " + unicode(self.page) + "/" + unicode(self.pages),
-      "PMs:" + unicode(self.pmCount),
+      "Page: " + str(self.page) + "/" + str(self.pages),
+      "PMs:" + str(self.pmCount),
       "Date: " + self.lastPMTime.strftime("%m/%d/%Y %I:%M:%S %p")
     ])
 
@@ -169,13 +166,13 @@ class PMThread(base.Base):
         'thread': self.id,
         'page': 1
       }
-      firstPageUrl = 'https://endoftheinter.net/inboxthread.php?' + urllib.urlencode(firstPageParams)
+      firstPageUrl = 'https://endoftheinter.net/inboxthread.php?' + urllib.parse.urlencode(firstPageParams)
       firstPage = self.connection.page(firstPageUrl)
       firstPageSoup = bs4.BeautifulSoup(firstPage.html)
       infobar = firstPageSoup.find('div', {'class': 'infobar'})
       if infobar is None:
         # this thread doesn't exist.
-        raise InvalidPMThreadError(self)
+        raise albatross.InvalidPMThreadError(self)
       numPages = int(infobar.find('span').text)
       # fetch the PMs on this page.
       self.appendPMs(firstPage.html, firstPageUrl, self.connection.parallelCurl, {'page': 1})
@@ -186,7 +183,7 @@ class PMThread(base.Base):
 
     # now fetch all the pages.
     for page in range(startPage, int(numPages)+1):
-      threadPageParams = urllib.urlencode({'thread': self.id, 'page': page})
+      threadPageParams = urllib.parse.urlencode({'thread': self.id, 'page': page})
       self.connection.parallelCurl.startrequest('https://endoftheinter.net/inboxthread.php?' + threadPageParams, self.appendPMs, {'page': page})
     self.connection.parallelCurl.finishallrequests()
     self._pms = sorted(self._pms, key=lambda x: x._pm_order)
@@ -233,13 +230,13 @@ class PMThread(base.Base):
       raise InvalidPMMessageError(self, message)
     # get csrf key.
     if self._csrfKey is None:
-      threadPage = self.connection.page('https://endoftheinter.net/inboxthread.php?thread=' + unicode(self.id))
+      threadPage = self.connection.page('https://endoftheinter.net/inboxthread.php?thread=' + str(self.id))
       soup = bs4.BeautifulSoup(threadPage.html)
       csrfTag = soup.find("input", {"name": "h"})
       if not csrfTag:
         raise InvalidCSRFKeyError(soup, thread=self)
       self.set({'csrfKey': csrfTag.get('value')})
-    if isinstance(message, unicode):
+    if isinstance(message, str):
       message = message.encode('utf-8')
     post_fields = {
       'pm': self.id,

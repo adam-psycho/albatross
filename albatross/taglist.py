@@ -8,13 +8,11 @@
 
     TagList - Tag list information retrieval and manipulation.
 '''
-import HTMLParser
+from html.parser import HTMLParser
 import urllib
 
 import albatross
-import page
-import base
-import tag
+from . import base
 
 class TagListError(albatross.Error):
   pass
@@ -30,7 +28,7 @@ class TagList(base.Base):
     self._tagNames = dict(zip(tags, [1]*len(tags)))
     self._tags = None
     if active:
-      parser = HTMLParser.HTMLParser()
+      parser = HTMLParser()
       mainPage = page.Page(self.connection, "https://endoftheinter.net/main.php")
       tagLinksHTML = albatross.getEnclosedString(mainPage.html, r'<div style="font-size: 14px">', r'</div>', multiLine=True)
       tagLinks = tagLinksHTML.split('&nbsp;&bull; ')

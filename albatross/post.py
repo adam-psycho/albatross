@@ -10,14 +10,13 @@
 '''
 
 import datetime
-import HTMLParser
+from html.parser import HTMLParser
 import pytz
 import re
 
 import albatross
-import connection
-import base
-import topic
+from . import topic
+from . import base
 
 class InvalidPostError(topic.InvalidTopicError):
   def __init__(self, post):
@@ -26,7 +25,7 @@ class InvalidPostError(topic.InvalidTopicError):
   def __str__(self):
     return "\n".join([
       super(InvalidPostError, self).__str__(),
-      "ID: " + unicode(self.post.id),
+      "ID: " + str(self.post.id),
       ])
 class MalformedPostError(InvalidPostError):
   def __init__(self, post, topic, text):
@@ -35,7 +34,7 @@ class MalformedPostError(InvalidPostError):
   def __str__(self):
     return "\n".join([
         super(MalformedPostError, self).__str__(),
-        "Text: " + unicode(self.text)
+        "Text: " + str(self.text)
       ])
 
 class Post(base.Base):
@@ -61,13 +60,13 @@ class Post(base.Base):
     if self._date is None:
       self.load()
     return "\n".join([
-      "ID: " + unicode(self.id),
-      "User: " + unicode(self.user.name) + " (" + unicode(self.user.id) + ")",
+      "ID: " + str(self.id),
+      "User: " + str(self.user.name) + " (" + str(self.user.id) + ")",
       "Date: " + self.date.strftime("%m/%d/%Y %I:%M:%S %p"),
       "Post:",
-      unicode(self.html),
+      str(self.html),
       "---",
-      unicode(self.sig)
+      str(self.sig)
       ])
 
   def __contains__(self, searchString):
@@ -86,7 +85,7 @@ class Post(base.Base):
     """
     Given some HTML containing a post, return a dict of attributes.
     """
-    parser = HTMLParser.HTMLParser()
+    parser = HTMLParser()
     timeString = albatross.getEnclosedString(text, r'<b>Posted:</b> ', r' \| ', greedy=False)
     altTimeString = albatross.getEnclosedString(text, r'<b>Posted:</b> ', r'</div>', greedy=False)
 
@@ -108,7 +107,7 @@ class Post(base.Base):
       # sigless and on topic listing.
       attrs['html'] = albatross.getEnclosedString(text, r' class="message">', r'', multiLine=True, greedy=True)
     if attrs['html'] is False:
-      raise MalformedPostError(self, self.topic, unicode(text))
+      raise MalformedPostError(self, self.topic, str(text))
     attrs['html'] = attrs['html'].rstrip("\n")
     if attrs['sig'] is not False:
       attrs['sig'] = attrs['sig'].rstrip("\n")
@@ -118,7 +117,7 @@ class Post(base.Base):
     """
     Fetches post info.
     """
-    postPage = self.connection.page('https://boards.endoftheinter.net/message.php?id=' + unicode(self.id) + '&topic=' + unicode(self.topic.id))
+    postPage = self.connection.page('https://boards.endoftheinter.net/message.php?id=' + str(self.id) + '&topic=' + str(self.topic.id))
     # check to see if this page is valid.
     if re.search(r'<em>Invalid topic.</em>', postPage.html) or re.search(r'<em>Can\'t find that post...</em>', postPage.html):
       raise InvalidPostError(self)

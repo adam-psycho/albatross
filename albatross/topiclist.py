@@ -10,15 +10,14 @@
 '''
 import calendar
 import datetime
-import HTMLParser
+from html.parser import HTMLParser
 import pytz
 import re
 import sys
 import urllib
-import urllib2
 
 import albatross
-import base
+from . import base
 
 class TopicListError(albatross.Error):
   def __init__(self, topicList, message=None):
@@ -62,9 +61,9 @@ class TopicList(base.Base):
     allowed = True and self._allowedTags or []
     forbidden = True and self._forbiddenTags or []
     if len(forbidden) > 0:
-      return "-".join(["+".join(["[" + urllib2.quote(tag) + "]" for tag in allowed]), "-".join(["[" + urllib2.quote(tag) + "]" for tag in forbidden])])
+      return "-".join(["+".join(["[" + urllib.parse.quote(tag) + "]" for tag in allowed]), "-".join(["[" + urllib.parse.quote(tag) + "]" for tag in forbidden])])
     else:
-      return "+".join(["[" + urllib2.quote(tag) + "]" for tag in allowed])
+      return "+".join(["[" + urllib.parse.quote(tag) + "]" for tag in allowed])
 
   def parse(self, text):
     """
@@ -73,7 +72,7 @@ class TopicList(base.Base):
     thisTopic = re.search(r'\<td\ class\=\"oh\"\>\<div\ class\=\"fl\"\>((?P<closed><span\ class\=\"closed\"\>))?\<a\ href\=\"//[a-z]+\.endoftheinter\.net/showmessages\.php\?topic\=(?P<topicID>[0-9]+)\">(<b>)?(?P<title>[^<]+)(</b>)?\</a\>(</span>)?</div\>\<div\ class\=\"fr\"\>((?P<tags>(.+?))\ )?\<\/div\></td\>\<td\>(?P<moneybags>\<span\ style\=\"color\:green\;font\-weight\:bold\"\>\$\ \$\<\/span\>)?\ *(\<a\ href\=\"//endoftheinter\.net/profile\.php\?user=(?P<userID>[0-9]+)\"\>(?P<username>[^<]+)\</a\>)?(Human)?\ *(?P<moneybags2>\<span\ style\=\"color\:green\;font\-weight\:bold\"\>\$\ \$\<\/span\>)?\<\/td\>\<td\>(?P<postCount>[0-9]+)(\<span id\=\"u[0-9]+_[0-9]+\"\> \(\<a href\=\"//(boards)?(archives)?\.endoftheinter\.net/showmessages\.php\?topic\=[0-9]+(\&amp\;page\=[0-9]+)?\#m[0-9]+\"\>\+(?P<newPostCount>[0-9]+)\</a\>\)\&nbsp\;\<a href\=\"\#\" onclick\=\"return clearBookmark\([0-9]+\, \$\(\&quot\;u[0-9]+\_[0-9]+\&quot\;\)\)\"\>x\</a\>\</span\>)?\</td\>\<td\>(?P<lastPostTime>[^>]+)\</td\>', text)
     if not thisTopic:
       raise TopicListError(self)
-    parser = HTMLParser.HTMLParser()
+    parser = HTMLParser()
     if thisTopic.group('userID') and thisTopic.group('username'):
       user = self.connection.user(int(thisTopic.group('userID'))).set({'name': parser.unescape(thisTopic.group('username'))})
     else:
@@ -128,15 +127,15 @@ class TopicList(base.Base):
     while not maxTime or maxTime > activeSince:
       # assemble the search query and request this search page's topic listing.
       requestArgs = {
-        'q': unicode(query).encode('utf-8')
+        'q': str(query).encode('utf-8')
       }
       if maxTime is not None:
         if isinstance(maxTime, datetime.datetime):
           maxTime = calendar.timegm(maxTime.utctimetuple())
-        requestArgs['ts'] = unicode(maxTime).encode('utf-8')
+        requestArgs['ts'] = str(maxTime).encode('utf-8')
       if maxID is not None:
-        requestArgs['t'] = unicode(maxID).encode('utf-8')
-      searchQuery = urllib.urlencode(requestArgs)
+        requestArgs['t'] = str(maxID).encode('utf-8')
+      searchQuery = urllib.parse.urlencode(requestArgs)
 
       url = 'https://boards.endoftheinter.net/topics/' + self.formatTagQueryString() + '?' + searchQuery
       topicPageHTML = self.connection.page(url).html

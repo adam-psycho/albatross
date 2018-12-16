@@ -33,7 +33,7 @@
 
 import sys
 import pycurl
-import cStringIO
+import io
 import time
 
 # Pete- Not quite sure what this is all about, but seems important, so copied from
@@ -89,7 +89,7 @@ class ParallelCurl:
         for option, value in self.options.items():
             ch.setopt(option, value)
         ch.setopt(pycurl.URL, url)
-        result_buffer = cStringIO.StringIO()
+        result_buffer = io.BytesIO()
         ch.setopt(pycurl.WRITEFUNCTION, result_buffer.write)
     
         if post_fields is not None:

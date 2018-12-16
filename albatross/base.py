@@ -10,7 +10,6 @@
 '''
 
 import albatross
-import connection
 
 def loadable(func):
   '''
