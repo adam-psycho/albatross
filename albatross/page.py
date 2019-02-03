@@ -76,7 +76,7 @@ class Page(object):
         continue
     return header
 
-  def _getPage(self, retries=10):
+  def _getPage(self, retries=30):
     """
     Uses cURL to read a page.
     Retries up to retries times before returning an error.
@@ -106,7 +106,7 @@ class Page(object):
         continue
       # check to see if ETI is acting up.
       if requestCode in {0:1, 404:1, 500:1, 501:1, 502:1, 503:1, 504:1}:
-        raise PageLoadError(self)
+        pass
       if self.needsAuth:
         if self.checkAuthed(response):
           self._authed = True
