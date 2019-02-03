@@ -150,6 +150,7 @@ class TopicList(base.Base):
       originalTopicsNum = len(self._topics)
       for topic in topicListingHTML:
         topicInfo = self.parse(topic)
+        print(datetime.datetime.strftime(topicInfo['lastPostTime'], '%Y-%m-%d'))
         if topicInfo and topicInfo['lastPostTime'] >= activeSince:
           self._topics.append(self.connection.topic(topicInfo['id']).set(topicInfo))
       
