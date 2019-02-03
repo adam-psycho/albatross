@@ -83,7 +83,10 @@ class UserList(base.Base):
     """
     Takes the HTML of one page of a user listing and returns a list containing the HTML for one user in each element on said page.
     """
-    return text.split('<tr><td>')[1:]
+    try:
+      return text.split('<tr><td>')[1:]
+    except:
+      return text.decode('utf-8').split('<tr><td>')[1:]
 
   def appendUsers(self, text, url, curlHandle, paramArray):
     """
