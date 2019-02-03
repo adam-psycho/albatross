@@ -16,6 +16,7 @@ import urllib
 
 import albatross
 from . import base
+from . import page
 
 class UserListError(albatross.Error):
   def __init__(self, topicList):
